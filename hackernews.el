@@ -45,14 +45,6 @@
   :group 'hackernews
   :type 'string)
 
-(defcustom hackernews-title-format "%s"
-  "Format specification for displaying the title of an item.
-The result is obtained by passing this string and the title to
-`format'."
-  :package-version '(hackernews . "1.0.0")
-  :group 'hackernews
-  :type 'string)
-
 (defcustom hackernews-preserve-point t
   "Whether to preserve point when loading more stories.
 When nil, point is placed on first new item retrieved."
@@ -362,27 +354,22 @@ which see."
   label)
 
 (defun hackernews--render-item (item)
-  "Render Hacker News ITEM in current buffer.
-The user option `hackernews-title-format' controls how each of the ITEM's titles
-are formatted. These components are then combined according to
-`hackernews-item-format'. The titles are then rendered as text buttons which are
-hyperlinked to their respective URLs."
+  "Render Hacker News ITEM in current buffer."
   (let* ((id           (cdr (assq 'id          item)))
          (title        (cdr (assq 'title       item)))
-         (item-url     (cdr (assq 'url         item)))
-         (descendants  (cdr (assq 'descendants item))))
+         (item-url     (cdr (assq 'url         item))))
     (insert
      (format-spec hackernews-item-format
                   (format-spec-make
                    ?t (hackernews--button-string
                        'hackernews-link
-                       (format hackernews-title-format title)
+                       title
                        item-url
                        id))))))
 
 (defun hackernews--display-items ()
   "Render items associated with, and pop to, the current buffer."
-  (let* ((reg   (hackernews--get :register))
+  (let* ((reg (hackernews--get :register))
          (items (hackernews--get :items))
          (nitem (length items))
          (inhibit-read-only t))
@@ -470,11 +457,11 @@ Objects are decoded as alists and arrays as vectors.")
 
 (defun hackernews--retrieve-items ()
   "Retrieve items associated with current buffer."
-  (let* ((items  (hackernews--get :items))
-         (reg    (hackernews--get :register))
-         (nitem  (length items))
+  (let* ((items (hackernews--get :items))
+         (reg (hackernews--get :register))
+         (nitem (length items))
          (offset (car reg))
-         (ids    (cdr reg)))
+         (ids (cdr reg)))
     (dotimes-with-progress-reporter (i nitem)
         (format "Retrieving %d..." nitem)
       (aset items i (hackernews--read-contents
@@ -541,7 +528,7 @@ N defaults to `hackernews-items-per-page'."
   (interactive "P")
   (hackernews--ensure-major-mode)
   (let ((reg  (hackernews--get :register)))
-    (unless (reg)
+    (unless reg
       (signal 'hackernews-error '("Buffer in invalid state")))
     (if (>= (car reg) (length (cdr reg)))
         (message "%s" (substitute-command-keys "\
