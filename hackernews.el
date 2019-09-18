@@ -31,13 +31,12 @@
 
 ;;;; User options
 
-(defcustom hackernews-items-per-page 35
-  "Default number of stories to retrieve in one go."
-  :package-version '(hackernews . "1.0.0")
+(defcustom hackernews-items-per-page nil
+  "Default number of stories to retrieve in one go.
+If nil, the window will be filled with stories."
+  :package-version '(hackernews . "1.1.0")
   :group 'hackernews
   :type 'integer)
-
-;; TODO: Allow the following `*-format' options to take on function values?
 
 (defcustom hackernews-item-format "%t\n"
   "Format string for items in buffers. t is the item title."
@@ -478,9 +477,10 @@ hackernews buffer."
       (hackernews--put :register (cons offset ids))
       (hackernews--put :items    (make-vector
                                   (max 0 (min (- (length ids) offset)
-                                              (if n
-                                                  (prefix-numeric-value n)
-                                                hackernews-items-per-page)))
+                                              (cond
+                                               (n (prefix-numeric-value n))
+                                               (hackernews-items-per-page)
+                                               (t (1- (window-text-height))))))
                                   ()))
 
       (hackernews--retrieve-items)
