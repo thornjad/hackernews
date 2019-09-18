@@ -31,7 +31,7 @@
 
 ;;;; User options
 
-(defcustom hackernews-items-per-page 50
+(defcustom hackernews-items-per-page 35
   "Default number of stories to retrieve in one go."
   :package-version '(hackernews . "1.0.0")
   :group 'hackernews
@@ -84,17 +84,6 @@ not interrupted."
   :group 'hackernews
   :type 'boolean)
 
-(defcustom hackernews-internal-browser-function
-  (if (functionp 'eww-browse-url)
-      #'eww-browse-url
-    #'browse-url-text-emacs)
-  "Function to load a given URL within Emacs.
-See `browse-url-browser-function' for some possible options."
-  :package-version '(hackernews . "1.0.0")
-  :group 'hackernews
-  :type (cons 'radio (butlast (cdr (custom-variable-type
-                                    'browse-url-browser-function)))))
-
 (defcustom hackernews-show-visited-links t
   "Whether to visually distinguish links that have been visited.
 For example, when a link with the `hackernews-link' face is
@@ -135,10 +124,12 @@ When nil, visited links are not persisted across sessions."
 
 (defvar hackernews-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "g"             #'hackernews-reload)
-    (define-key map "m"             #'hackernews-load-more-stories)
-    (define-key map "n"             #'hackernews-next-item)
-    (define-key map "p"             #'hackernews-previous-item)
+    (define-key map "g" #'hackernews-reload)
+    (define-key map "m" #'hackernews-load-more-stories)
+    (define-key map "n" #'hackernews-next-item)
+    (define-key map "j" #'hackernews-next-item)
+    (define-key map "p" #'hackernews-previous-item)
+    (define-key map "k" #'hackernews-previous-item)
     map)
   "Keymap used in hackernews buffer.")
 
@@ -147,19 +138,18 @@ When nil, visited links are not persisted across sessions."
     (set-keymap-parent map button-map)
     (define-key map "R" #'hackernews-button-mark-as-unvisited)
     (define-key map "r" #'hackernews-button-mark-as-visited)
-    (define-key map "t" #'hackernews-button-browse-internal)
     map)
   "Keymap used on hackernews links.")
 
 (define-button-type 'hackernews-link
-  'action                  #'hackernews-browse-url-action
-  'follow-link             t
-  'hackernews-face         'hackernews-link
+  'action #'hackernews-browse-url-action
+  'follow-link t
+  'hackernews-face 'hackernews-link
   'hackernews-visited-face 'hackernews-link-visited
-  'keymap                  hackernews-button-map)
+  'keymap hackernews-button-map)
 
 ;; Use `font-lock-face' on creation instead.
-(button-type-put 'hackernews-link          'face nil)
+(button-type-put 'hackernews-link 'face nil)
 
 (defvar hackernews--visited-ids
   (mapcar #'list '(hackernews-link))
@@ -168,7 +158,7 @@ Values are initially nil and later replaced with a hash table.")
 
 ;; Emulate `define-error' for Emacs < 24.4.
 (put 'hackernews-error 'error-conditions '(hackernews-error error))
-(put 'hackernews-error 'error-message    "Hackernews error")
+(put 'hackernews-error 'error-message "hackernews error")
 
 ;;;; Utils
 
@@ -324,13 +314,6 @@ If UNVISIT is non-nil, mark BUTTON as unvisited."
   "Pass URL of BUTTON to `browse-url'."
   (hackernews--visit button #'browse-url))
 
-(defun hackernews-button-browse-internal ()
-  "Open URL of button under point within Emacs.
-The URL is passed to `hackernews-internal-browser-function',
-which see."
-  (interactive)
-  (hackernews--visit (point) hackernews-internal-browser-function))
-
 (defun hackernews-button-mark-as-visited ()
   "Mark button under point as visited."
   (interactive)
@@ -355,17 +338,15 @@ which see."
 
 (defun hackernews--render-item (item)
   "Render Hacker News ITEM in current buffer."
-  (let* ((id           (cdr (assq 'id          item)))
-         (title        (cdr (assq 'title       item)))
-         (item-url     (cdr (assq 'url         item))))
+  (let* ((id (cdr (assq 'id item)))
+         (title (cdr (assq 'title item)))
+         (item-url (cdr (assq 'url item))))
     (insert
-     (format-spec hackernews-item-format
-                  (format-spec-make
-                   ?t (hackernews--button-string
-                       'hackernews-link
-                       title
-                       item-url
-                       id))))))
+     (hackernews--button-string
+      'hackernews-link
+      title
+      item-url
+      id))))
 
 (defun hackernews--display-items ()
   "Render items associated with, and pop to, the current buffer."
@@ -403,8 +384,6 @@ key		binding
 \\<hackernews-button-map>
 \\[push-button]\
 		Open link at point in default (external) browser.
-\\[hackernews-button-browse-internal]\
-		Open link at point in text-based browser within Emacs.
 \\<hackernews-mode-map>
 \\[hackernews-next-item]\
 		Move to next title link.

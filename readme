@@ -18,7 +18,6 @@ KEYMAP
 	| p or k | previous link                              |
 	| m      | load more links                            |
 	| g      | refresh links                              |
-	| q      | quit                                       |
 
 COPYING
 
