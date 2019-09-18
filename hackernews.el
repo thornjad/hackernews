@@ -31,7 +31,7 @@
 
 ;;;; User options
 
-(defcustom hackernews-items-per-page 20
+(defcustom hackernews-items-per-page 50
   "Default number of stories to retrieve in one go."
   :package-version '(hackernews . "1.0.0")
   :group 'hackernews
